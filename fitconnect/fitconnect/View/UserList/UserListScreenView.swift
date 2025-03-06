@@ -9,25 +9,27 @@
 import SwiftUI
 
 struct UserListScreenView: View {
-    @StateObject private var viewModel = UserViewModel()
-    
+    @StateObject private var viewModel = UserViewModel(apiService: APIService())
+
     
     var body: some View {
-       
-        VStack {
-            Text("User List")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-            
-            List(viewModel.users) { user in
-                UserRowView(user: user)
+            VStack {
+               
+                
+                if viewModel.isLoading {
+                    ProgressView("Loading users...") // ✅ Show loading indicator
+                        .padding()
+                } else {
+                    List(viewModel.users) { user in
+                        UserRowView(user: user)
+                    }
+                }
+            }
+            .onAppear {
+                viewModel.fetchUsers()
+                UserDefaults.standard.set(false, forKey: "isLoggedIn")
             }
         }
-        .onAppear {
-            viewModel.fetchUsers()
-            UserDefaults.standard.set(false, forKey: "isLoggedIn")
-        }
-    }
 }
 
 #Preview {

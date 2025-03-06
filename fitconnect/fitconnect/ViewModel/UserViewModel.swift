@@ -10,22 +10,29 @@ import Foundation
 class UserViewModel: ObservableObject {
     @Published var users: [User] = []
     @Published var errorMessage: String? = nil
+    @Published var isLoading: Bool = false // ✅ Track loading state
     
     private let apiService: APIServiceProtocol
 
-    init(apiService: APIServiceProtocol = APIService()) {
+    init(apiService: APIServiceProtocol) {
         self.apiService = apiService
     }
 
     func fetchUsers() {
+        isLoading = true // ✅ Start loading
         apiService.fetchUsers { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let users):
-                self.users = users
-            case .failure(let error):
-                self.errorMessage = error.localizedDescription
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isLoading = false // ✅ Stop loading
+                switch result {
+                case .success(let users):
+                    self.users = users
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
             }
         }
     }
 }
+
+

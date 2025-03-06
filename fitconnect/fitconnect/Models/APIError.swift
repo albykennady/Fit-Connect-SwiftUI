@@ -6,17 +6,21 @@
 //
 import Foundation
 
-enum APIError: Error, LocalizedError {
+enum APIError: LocalizedError {
     case invalidURL
     case requestFailed
     case decodingFailed
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL: return "Invalid URL."
-        case .requestFailed: return "Request failed."
-        case .decodingFailed: return "Failed to decode response."
+        case .invalidURL:
+            return "The API URL is invalid."
+        case .requestFailed:
+            return "Failed to complete the request."
+        case .decodingFailed:
+            return "Failed to decode the response."
         }
     }
 }
+
 

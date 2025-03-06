@@ -7,22 +7,22 @@
 
 import Foundation
 
-import Foundation
+final class APIService: APIServiceProtocol {
+    private let urlSession: URLSession
+    private let baseURL: String
 
-protocol APIServiceProtocol {
-    func fetchUsers(completion: @escaping (Result<[User], APIError>) -> Void)
-}
+    init(urlSession: URLSession = .shared, baseURL: String = APIConstants.baseURL) {
+        self.urlSession = urlSession
+        self.baseURL = baseURL
+    }
 
-class APIService: APIServiceProtocol {
     func fetchUsers(completion: @escaping (Result<[User], APIError>) -> Void) {
-        let urlString = "\(APIConstants.baseURL)/users"
-        
-        guard let url = URL(string: urlString) else {
+        guard let url = URL(string: "\(baseURL)/users") else {
             completion(.failure(.invalidURL))
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, _, error in
+        urlSession.dataTask(with: url) { data, _, error in
             if let _ = error {
                 completion(.failure(.requestFailed))
                 return
