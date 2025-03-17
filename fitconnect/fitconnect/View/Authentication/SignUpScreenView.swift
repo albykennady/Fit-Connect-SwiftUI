@@ -1,52 +1,75 @@
 import SwiftUI
 
 struct SignUpScreenView: View {
-    @State private var username = ""
-    @State private var email = ""
-    @State private var password = ""
-    @State private var navigateToSignIn = false  // Track navigation state
+    @ObservedObject var viewModel = ValidatorViewModel()
     
     var body: some View {
-        NavigationStack {
-            VStack {
-                Text("Sign Up")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                TextField("Username", text: $username)
+        VStack(spacing: 20) {
+            Spacer().frame(height: 90)
+            
+            Text("Welcome !")
+                .font(.system(size: 32, weight: .bold))
+            Text("Sign up to start your journey with us")
+            
+            Spacer().frame(height: 40)
+            
+            VStack(alignment: .leading, spacing: 15) {
+                Text("Username")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.black)
+                TextField("Enter username", text: $viewModel.username)
                     .padding()
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .background(Color.gray).opacity(10/100)
+                    .cornerRadius(16)
                 
-                TextField("Email", text: $email)
+                Text("Email")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.black)
+                TextField("Enter email", text: $viewModel.email)
                     .padding()
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .background(Color.gray).opacity(10/100)
+                    .cornerRadius(16)
                 
-                SecureField("Password", text: $password)
+                Text("Password")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.black)
+                SecureField("Enter Password", text: $viewModel.password)
                     .padding()
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .background(Color.gray).opacity(10/100)
+                    .cornerRadius(16)
+                    .padding(.bottom, 10)
                 
                 Button(action: {
-                    // Handle Sign Up logic here
-                    // For example, you can verify input and perform the sign-up action
-                    
-                    // After successful sign-up, set the flag to navigate
-                    navigateToSignIn = true
+                    viewModel.validate()
                 }) {
                     Text("Sign Up")
+                        .font(.system(size: 18, weight: .light))
+                        .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .background(Color(red: 0.337, green: 0.863, blue: 0.773))
+                        .cornerRadius(26)
                 }
-                .padding()
-
-                // NavigationLink placed outside button action
-                NavigationLink(destination: SignInScreenView(), isActive: $navigateToSignIn) {
-                    EmptyView()
+                Spacer().frame(height: 90)
+                
+                HStack {
+                    Text("Already have an account?")
+                        .font(.system(size: 16))
+                    Button(action: {
+                        
+                    }) {
+                        Text("Sign In")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color(red: 0.337, green: 0.863, blue: 0.773))
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 20)
             }
-            .padding()
+            .padding(.horizontal, 20)
+        }
+        .alert(isPresented: $viewModel.isError) {
+            Alert(title: Text(viewModel.errorMessage))
         }
     }
 }
