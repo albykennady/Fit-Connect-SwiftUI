@@ -1,6 +1,6 @@
 //
 //  HealthScoreView.swift
-//  fitconnect
+//  FitConnect
 //
 //  Created by Alby Kennady on 19/03/25.
 //
@@ -18,11 +18,9 @@ struct HealthScoreView: View {
                 
                 Spacer()
                 
-                Button(action: {
-                    // Action for All Data button
-                }) {
+                NavigationLink(destination: AllHealthDataView()) {
                     HStack {
-                        Image(systemName: "paperplane.fill") 
+                        Image(systemName: "paperplane.fill")
                             .foregroundColor(Color(UIColor(red: 0.45, green: 0.87, blue: 0.78, alpha: 1.00)))
                         
                         Text("All data")
@@ -74,10 +72,11 @@ struct HealthScoreView: View {
             .background(Color(UIColor(red: 0.94, green: 0.99, blue: 0.98, alpha: 1.00)))
             .cornerRadius(12)
         }
-        
     }
 }
 
 #Preview {
-    HealthScoreView(score: 78)
+    NavigationView { 
+        HealthScoreView(score: 78)
+    }
 }

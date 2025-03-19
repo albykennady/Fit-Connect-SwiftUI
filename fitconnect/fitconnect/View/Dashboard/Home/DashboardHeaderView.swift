@@ -49,8 +49,7 @@ struct DashboardHeaderView: View {
     }
     
     func handleLogout() {
-        // Perform logout actions (clear user session, etc.)
-        isLoggedOut = true // Trigger navigation to Sign-In screen
+        isLoggedOut = true 
     }
 }
 

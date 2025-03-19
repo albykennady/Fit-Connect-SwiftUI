@@ -11,6 +11,8 @@ struct Translations {
     
     //TITLE TEXTS
     static let TITLE_SPLASH_SUBTITLE : String = "Join our community and start your fitness journey today!"
+    static let TITLE_ALL_HLTH_DATA : String = "All Health Data"
+    
     
     //LABEL TEXTS
     static let LABEL_WELCOME_BACK: String = "Welcome Back 👋"
@@ -27,6 +29,8 @@ struct Translations {
     static let LABEL_HIGHLIGHTS: String = "Highlights"
     static let LABEL_OVERVIEW: String = "Overview"
     static let LABEL_HLTH_SCR: String = "Health Score"
+    static let LABEL_TS_WK_RPRT : String = "This week report"
+    static let LABEL_VIEW_MORE: String = "View More"
     
     
     //BUTTON TEXTS

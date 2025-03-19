@@ -13,7 +13,7 @@ struct ThisWeekReport: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("This Week Report")
+                Text(Translations.LABEL_TS_WK_RPRT)
                     .font(.system(size: 18, weight: .bold))
 
                 Spacer()
@@ -22,7 +22,7 @@ struct ThisWeekReport: View {
                     // Action for "View More"
                 }) {
                     HStack(spacing: 4) {
-                        Text("View more")
+                        Text(Translations.LABEL_VIEW_MORE)
                             .font(.system(size: 14))
                             .foregroundColor(.blue)
                         Image(systemName: "chevron.right")
