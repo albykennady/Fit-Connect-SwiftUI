@@ -13,25 +13,25 @@ struct SignInScreenView: View {
         VStack(spacing: 20) {
             Spacer().frame(height: 90)
             
-            Text("Welcome Back 👋")
+            Text(Translations.LABEL_WELCOME)
                 .font(.system(size: 32, weight: .bold))
                 .padding(.bottom, 20)
             
             Spacer().frame(height: 40)
             
             VStack(alignment: .leading, spacing: 15) {
-                Text("Email")
+                Text(Translations.LABEL_EMAIL)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.black)
-                TextField("Enter email", text: $viewModel.email)
+                TextField(Translations.PLACEHOLDER_EMAIL, text: $viewModel.email)
                     .padding()
                     .background(Color.gray).opacity(10/100)
                     .cornerRadius(16)
                 
-                Text("Password")
+                Text(Translations.LABEL_PASSWORD)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.black)
-                SecureField("Enter Password", text: $viewModel.password)
+                SecureField(Translations.PLACEHOLDER_PASSWORD, text: $viewModel.password)
                     .padding()
                     .background(Color.gray).opacity(10/100)
                     .cornerRadius(16)
@@ -40,7 +40,7 @@ struct SignInScreenView: View {
                 HStack {
                     Spacer()
                     Button(action: {}) {
-                        Text("Forgot Password?")
+                        Text(Translations.BTN_FORGOT_PASSWORD)
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(Color(red: 0.337, green: 0.863, blue: 0.773))
                     }
@@ -49,31 +49,36 @@ struct SignInScreenView: View {
                 Button(action: {
                     viewModel.validate()
                 }) {
-                    Text("Sign In")
-                        .font(.system(size: 18, weight: .light))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(red: 0.337, green: 0.863, blue: 0.773))
-                        .cornerRadius(26)
+                    NavigationLink(destination: DashboardScreenView()) {
+                        Text(Translations.BTN_SIGN_IN)
+                            .font(.system(size: 18, weight: .light))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(red: 0.337, green: 0.863, blue: 0.773))
+                            .cornerRadius(26)
+                    }
                 }
                 Spacer()
                 
                 HStack {
-                    Text("Don't have an account?")
+                    Text(Translations.LABEL_NO_ACCOUNT)
                         .font(.system(size: 16))
                     Button(action: {
                         
                     }) {
-                        Text("Sign Up")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color(red: 0.337, green: 0.863, blue: 0.773))
+                        NavigationLink(destination: SignUpScreenView()) {
+                            Text(Translations.BTN_SIGN_UP)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(Color(red: 0.337, green: 0.863, blue: 0.773))
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.bottom, 20)
             }
             .padding(.horizontal, 20)
+            .navigationBarBackButtonHidden(true)
         }
        
         .alert(isPresented: $viewModel.isError) {

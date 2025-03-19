@@ -29,7 +29,7 @@ struct SplashScreenView: View {
                             .scaledToFit()
                             .frame(width: 95)
                         
-                        Text("FitConnect")
+                        Text(Translations.APP_NAME)
                         
                             .font(.system(size: 45, weight: .regular, design: .default))
                             .foregroundColor(.white)
@@ -37,7 +37,7 @@ struct SplashScreenView: View {
                         
                     }
                     .padding(.top,60)
-                    Text("Join our community and start your fitness journey today!")
+                    Text(Translations.TITLE_SPLASH_SUBTITLE)
                         .font(.system(size: 17, weight: .regular, design: .default))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
@@ -52,7 +52,7 @@ struct SplashScreenView: View {
                             
                         }){
                             NavigationLink(destination: SignInScreenView()) {
-                                Text("Get Started")
+                                Text(Translations.BTN_GET_STARTED)
                                     .font(.system(size: 20,weight: .light))
                                     .foregroundColor(.black)
                                     .frame(maxWidth: .infinity)
@@ -67,7 +67,7 @@ struct SplashScreenView: View {
                         })
                         {
                             NavigationLink(destination: SignUpScreenView()) {
-                                Text("Sign up ")
+                                Text(Translations.BTN_SIGN_UP)
                                     .font(.system(size: 20,weight: .light))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
