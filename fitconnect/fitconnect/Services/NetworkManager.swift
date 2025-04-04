@@ -17,8 +17,12 @@ final class NetworkManager {
         self.baseURL = baseURL
     }
 
-    func makeRequest<T: Decodable>(endpoint: String, method: HTTPMethod = .get, completion: @escaping (Result<T, APIError>) -> Void) {
+    
+    
+    
+    func makeRequest<T: Decodable & Encodable>(endpoint: String, method: HTTPMethod = .get, body: Encodable? = nil, completion: @escaping (Result<T, APIError>) -> Void) {
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            Logger.log("NetworkManager - Error: Failed to create URL from baseURL and endpoint")
             completion(.failure(.invalidURL(description: "Failed to create URL from baseURL and endpoint")))
             return
         }
@@ -26,45 +30,103 @@ final class NetworkManager {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
 
-        // Add the access token to the Authorization header
+        // Log the request URL
+        Logger.log("NetworkManager - Request URL: \(url)")
+
+        // Add the access token to the Authorization header if present
         if let accessToken = getStoredAccessToken() {
             request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         }
 
+        // Log the headers
+        Logger.log("NetworkManager - Request Headers: \(String(describing: request.allHTTPHeaderFields))")
+
+        // Add body if method is POST or PUT, otherwise leave it nil
+        if method == .post || method == .put {
+            if let body = body {
+                do {
+                    let jsonData = try JSONEncoder().encode(body) // Encode the body as JSON
+                    request.httpBody = jsonData
+                    request.addValue("application/json", forHTTPHeaderField: "Content-Type") // Set Content-Type header
+                    
+                    // Log the request body
+                    if let bodyString = String(data: jsonData, encoding: .utf8) {
+                        Logger.log("NetworkManager - Request Body: \(bodyString)")
+                    }
+                } catch {
+                    Logger.log("NetworkManager - Error: Failed to encode body data")
+                    completion(.failure(.encodingFailed(description: "Failed to encode body data")))
+                    return
+                }
+            }
+        }
+
+        // Perform the network request
         urlSession.dataTask(with: request) { [weak self] data, response, error in
             if let error = error {
+                Logger.log("NetworkManager - Failure: Network request failed with error: \(error.localizedDescription)")
                 completion(.failure(.requestFailed(description: "Network request failed with error: \(error.localizedDescription)")))
                 return
             }
 
-            guard let data = data else {
-                completion(.failure(.requestFailed(description: "No data received from the server")))
+            guard let httpResponse = response as? HTTPURLResponse else {
+                Logger.log("NetworkManager - Failure: Invalid response")
+                completion(.failure(.requestFailed(description: "Invalid response received from server")))
                 return
             }
 
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 401 {
-                // Token expired, attempt to refresh the token
-                self?.refreshAccessToken { result in
-                    switch result {
-                    case .success(let newAccessToken):
-                        // Retry the original request with the new access token
-                        self?.retryRequestWithNewToken(request: request, newAccessToken: newAccessToken, completion: completion)
-                    case .failure:
-                        completion(.failure(.unauthorized(statusCode: 401)))
-                    }
-                }
-            } else {
+            // Log the HTTP status code
+            let statusCode = httpResponse.statusCode
+            Logger.log("NetworkManager - HTTP Status Code: \(statusCode)") // Log the HTTP status code
+            
+            // If status code is not within the 2xx range, handle it as failure
+            if !(200...299).contains(statusCode) {
+                let errorMessage = "Request failed with status code: \(statusCode)"
+                Logger.log("NetworkManager - Failure: \(errorMessage)")
+                completion(.failure(.requestFailed(description: errorMessage)))
+                return
+            }
+
+            // If status code is 200 OK, process the response data
+            if let data = data {
                 do {
-                    let response = try JSONDecoder().decode(T.self, from: data)
+                    var apiResponse = try JSONDecoder().decode(APIResponse<T>.self, from: data)
+                    
+                    // Set the status code after decoding
+                    apiResponse.httpStatusCode = statusCode  // Now that httpStatusCode is var, you can modify it
+                    
+                    Logger.log("NetworkManager - Response Data: \(apiResponse)") // Log the response data
+                    
                     DispatchQueue.main.async {
-                        completion(.success(response))
+                        guard let validResponse = apiResponse as? T else {
+                            // Handle the error by passing a failure with an error that includes a message
+                            completion(.failure(APIError.unknownError(description: "Failed to cast response.")))
+                            return
+                        }
+                        completion(.success(validResponse)) // Pass the valid response
                     }
+
                 } catch {
+                    Logger.log("NetworkManager - Failure: Decoding failed with error: \(error.localizedDescription)")
                     completion(.failure(.decodingFailed(description: "Failed to decode the response")))
                 }
+            } else {
+                Logger.log("NetworkManager - Failure: No data received from the server")
+                completion(.failure(.requestFailed(description: "No data received from the server")))
             }
         }.resume()
+
+        Logger.log("----------------LOG END NetworkManager-------------")
     }
+
+    
+    
+    
+    
+    
+    
+
+
 
     func refreshAccessToken(completion: @escaping (Result<String, APIError>) -> Void) {
         guard let refreshToken = getStoredRefreshToken() else {
