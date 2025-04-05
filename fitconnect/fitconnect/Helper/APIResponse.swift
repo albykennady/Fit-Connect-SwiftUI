@@ -1,5 +1,3 @@
-import Foundation
-
 struct APIResponse<T: Decodable & Encodable>: Decodable, Encodable {
     var data: T?
     var httpStatusCode: Int?
@@ -14,9 +12,28 @@ struct APIResponse<T: Decodable & Encodable>: Decodable, Encodable {
         self.message = message
     }
 
-    // This is required for the Encodable conformance
+    // Decoding function to handle both data and message responses
     enum CodingKeys: String, CodingKey {
-        case data, httpStatusCode, httpMessage, message
+        case data
+        case httpStatusCode
+        case httpMessage
+        case message
+    }
+
+    // Custom decoding to handle different types of responses (message vs. data)
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Try decoding each key (with error handling)
+        self.data = try? container.decode(T.self, forKey: .data)
+        self.httpStatusCode = try? container.decode(Int.self, forKey: .httpStatusCode)
+        self.httpMessage = try? container.decode(String.self, forKey: .httpMessage)
+        self.message = try? container.decode(String.self, forKey: .message)
+
+        // Handle edge case where only message is returned (i.e., no actual data)
+        if self.data == nil && self.message != nil {
+            self.data = nil // No data, just a message
+        }
     }
 
     // Encoding function to convert the object to JSON format
@@ -30,3 +47,4 @@ struct APIResponse<T: Decodable & Encodable>: Decodable, Encodable {
         try container.encodeIfPresent(message, forKey: .message)
     }
 }
+

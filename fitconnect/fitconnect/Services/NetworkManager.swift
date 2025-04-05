@@ -18,9 +18,13 @@ final class NetworkManager {
     }
 
     
+ 
+    
     
     
     func makeRequest<T: Decodable & Encodable>(endpoint: String, method: HTTPMethod = .get, body: Encodable? = nil, completion: @escaping (Result<T, APIError>) -> Void) {
+        Logger.log("")  // Log an empty line for clarity
+
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             Logger.log("NetworkManager - Error: Failed to create URL from baseURL and endpoint")
             completion(.failure(.invalidURL(description: "Failed to create URL from baseURL and endpoint")))
@@ -48,7 +52,7 @@ final class NetworkManager {
                     let jsonData = try JSONEncoder().encode(body) // Encode the body as JSON
                     request.httpBody = jsonData
                     request.addValue("application/json", forHTTPHeaderField: "Content-Type") // Set Content-Type header
-                    
+
                     // Log the request body
                     if let bodyString = String(data: jsonData, encoding: .utf8) {
                         Logger.log("NetworkManager - Request Body: \(bodyString)")
@@ -78,53 +82,101 @@ final class NetworkManager {
             // Log the HTTP status code
             let statusCode = httpResponse.statusCode
             Logger.log("NetworkManager - HTTP Status Code: \(statusCode)") // Log the HTTP status code
-            
-            // If status code is not within the 2xx range, handle it as failure
+
+            // Log the raw response data (this will also show error responses, not just success)
+            if let data = data, let dataString = String(data: data, encoding: .utf8) {
+                Logger.log("NetworkManager - Raw Response Data: \(dataString)") // Log raw response as a string
+            } else {
+                Logger.log("NetworkManager - No response data or failed to convert data to string.")
+            }
+
+            // Handle failure (non-2xx status codes)
             if !(200...299).contains(statusCode) {
-                let errorMessage = "Request failed with status code: \(statusCode)"
-                Logger.log("NetworkManager - Failure: \(errorMessage)")
-                completion(.failure(.requestFailed(description: errorMessage)))
+                // Decode the failure message
+                if let data = data {
+                    do {
+                        // Try to decode the response as a dictionary to extract the "message" field
+                        let failureResponse = try JSONDecoder().decode([String: String].self, from: data)
+                        let errorMessage = failureResponse["message"] ?? "Unknown error"
+                        
+                        // Log the error for debugging purposes
+                        Logger.log("NetworkManager - Error: \(errorMessage)")
+                        
+                        // Return the error message to the UI
+                        completion(.failure(.requestFailed(description: errorMessage))) // Send just the message to the UI
+                    } catch {
+                        Logger.log("NetworkManager - Failure: Decoding error message failed: \(error.localizedDescription)")
+                        completion(.failure(.decodingFailed(description: "Failed to decode failure message")))
+                    }
+                } else {
+                    Logger.log("NetworkManager - Failure: No error message in the response")
+                    completion(.failure(.requestFailed(description: "Request failed with no error message")))
+                }
                 return
             }
 
-            // If status code is 200 OK, process the response data
+            // Handle success (status code 200-299)
             if let data = data {
                 do {
-                    var apiResponse = try JSONDecoder().decode(APIResponse<T>.self, from: data)
+                    // Attempt to decode the response as APIResponse<T> (i.e., User)
+                    let apiResponse = try JSONDecoder().decode(APIResponse<T>.self, from: data)
                     
-                    // Set the status code after decoding
-                    apiResponse.httpStatusCode = statusCode  // Now that httpStatusCode is var, you can modify it
-                    
-                    Logger.log("NetworkManager - Response Data: \(apiResponse)") // Log the response data
-                    
-                    DispatchQueue.main.async {
-                        guard let validResponse = apiResponse as? T else {
-                            // Handle the error by passing a failure with an error that includes a message
-                            completion(.failure(APIError.unknownError(description: "Failed to cast response.")))
-                            return
+                    // If the response contains data (e.g., User), return that data
+                    if let responseData = apiResponse.data {
+                        DispatchQueue.main.async {
+                            completion(.success(responseData)) // Return the responseData if cast is successful
                         }
-                        completion(.success(validResponse)) // Pass the valid response
+                    } else if let message = apiResponse.message {
+                        // If no data but there is a message, handle it as a success message (as a string)
+                        Logger.log("NetworkManager - Success Message: \(message)") // Log success message
+                        
+                        // If the response type is expected to be a String, wrap the message in APIResponse<String> and return it
+                        DispatchQueue.main.async {
+                            let response = APIResponse<String>(data: message, httpStatusCode: statusCode, message: message)
+                            Logger.log("NetworkManager - Wrap the message in an APIResponse<String> and return it.")
+                            completion(.success(response as! T)) // Cast the response to T (assumed to be APIResponse<String>)
+                        }
+                    } else {
+                        // If there is neither data nor message, handle it as a failure
+                        Logger.log("NetworkManager - Error: No data or message in the response.")
+                        completion(.failure(.decodingFailed(description: "No data or message in the response.")))
                     }
-
                 } catch {
-                    Logger.log("NetworkManager - Failure: Decoding failed with error: \(error.localizedDescription)")
-                    completion(.failure(.decodingFailed(description: "Failed to decode the response")))
+                    // If decoding as APIResponse<T> fails, check if it’s a plain message (String)
+                    if let dataString = String(data: data, encoding: .utf8) {
+                        Logger.log("NetworkManager - Response is a success message: \(dataString)")
+                        
+                        // If T is String, pass the string directly
+                        if let messageType = T.self as? String.Type {
+                            DispatchQueue.main.async {
+                                completion(.success(dataString as! T)) // Cast the message as T if T is String
+                            }
+                        } else {
+                            DispatchQueue.main.async {
+                                completion(.failure(.decodingFailed(description: "Unexpected response format.")))
+                            }
+                        }
+                    } else {
+                        Logger.log("NetworkManager - Failure: Decoding failed with error: \(error.localizedDescription)")
+                        completion(.failure(.decodingFailed(description: "Failed to decode the response")))
+                    }
                 }
             } else {
                 Logger.log("NetworkManager - Failure: No data received from the server")
                 completion(.failure(.requestFailed(description: "No data received from the server")))
             }
         }.resume()
-
-        Logger.log("----------------LOG END NetworkManager-------------")
     }
 
+
+
     
     
     
     
-    
-    
+
+
+
 
 
 
