@@ -8,5 +8,9 @@
 import Foundation
 
 protocol APIServiceProtocol {
+    
     func fetchUsers(completion: @escaping (Result<[User], APIError>) -> Void)
+    func registerUser(user: User, completion: @escaping (Result<APIResponse<String>, APIError>) -> Void)
 }
+
+
