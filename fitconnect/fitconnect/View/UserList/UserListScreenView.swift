@@ -20,9 +20,9 @@ struct UserListScreenView: View {
                     ProgressView("Loading users...") // ✅ Show loading indicator
                         .padding()
                 } else {
-                    List(viewModel.users) { user in
-                        UserRowView(user: user)
-                    }
+//                    List(viewModel.users) { user in
+//                        UserRowView(user: user)
+//                    }
                 }
             }
             .onAppear {

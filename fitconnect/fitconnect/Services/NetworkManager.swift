@@ -17,8 +17,16 @@ final class NetworkManager {
         self.baseURL = baseURL
     }
 
-    func makeRequest<T: Decodable>(endpoint: String, method: HTTPMethod = .get, completion: @escaping (Result<T, APIError>) -> Void) {
+    
+ 
+    
+    
+    
+    func makeRequest<T: Decodable & Encodable>(endpoint: String, method: HTTPMethod = .get, body: Encodable? = nil, completion: @escaping (Result<T, APIError>) -> Void) {
+        Logger.log("")  // Log an empty line for clarity
+
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            Logger.log("NetworkManager - Error: Failed to create URL from baseURL and endpoint")
             completion(.failure(.invalidURL(description: "Failed to create URL from baseURL and endpoint")))
             return
         }
@@ -26,45 +34,151 @@ final class NetworkManager {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
 
-        // Add the access token to the Authorization header
+        // Log the request URL
+        Logger.log("NetworkManager - Request URL: \(url)")
+
+        // Add the access token to the Authorization header if present
         if let accessToken = getStoredAccessToken() {
             request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         }
 
+        // Log the headers
+        Logger.log("NetworkManager - Request Headers: \(String(describing: request.allHTTPHeaderFields))")
+
+        // Add body if method is POST or PUT, otherwise leave it nil
+        if method == .post || method == .put {
+            if let body = body {
+                do {
+                    let jsonData = try JSONEncoder().encode(body) // Encode the body as JSON
+                    request.httpBody = jsonData
+                    request.addValue("application/json", forHTTPHeaderField: "Content-Type") // Set Content-Type header
+
+                    // Log the request body
+                    if let bodyString = String(data: jsonData, encoding: .utf8) {
+                        Logger.log("NetworkManager - Request Body: \(bodyString)")
+                    }
+                } catch {
+                    Logger.log("NetworkManager - Error: Failed to encode body data")
+                    completion(.failure(.encodingFailed(description: "Failed to encode body data")))
+                    return
+                }
+            }
+        }
+
+        // Perform the network request
         urlSession.dataTask(with: request) { [weak self] data, response, error in
             if let error = error {
+                Logger.log("NetworkManager - Failure: Network request failed with error: \(error.localizedDescription)")
                 completion(.failure(.requestFailed(description: "Network request failed with error: \(error.localizedDescription)")))
                 return
             }
 
-            guard let data = data else {
-                completion(.failure(.requestFailed(description: "No data received from the server")))
+            guard let httpResponse = response as? HTTPURLResponse else {
+                Logger.log("NetworkManager - Failure: Invalid response")
+                completion(.failure(.requestFailed(description: "Invalid response received from server")))
                 return
             }
 
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 401 {
-                // Token expired, attempt to refresh the token
-                self?.refreshAccessToken { result in
-                    switch result {
-                    case .success(let newAccessToken):
-                        // Retry the original request with the new access token
-                        self?.retryRequestWithNewToken(request: request, newAccessToken: newAccessToken, completion: completion)
-                    case .failure:
-                        completion(.failure(.unauthorized(statusCode: 401)))
+            // Log the HTTP status code
+            let statusCode = httpResponse.statusCode
+            Logger.log("NetworkManager - HTTP Status Code: \(statusCode)") // Log the HTTP status code
+
+            // Log the raw response data (this will also show error responses, not just success)
+            if let data = data, let dataString = String(data: data, encoding: .utf8) {
+                Logger.log("NetworkManager - Raw Response Data: \(dataString)") // Log raw response as a string
+            } else {
+                Logger.log("NetworkManager - No response data or failed to convert data to string.")
+            }
+
+            // Handle failure (non-2xx status codes)
+            if !(200...299).contains(statusCode) {
+                // Decode the failure message
+                if let data = data {
+                    do {
+                        // Try to decode the response as a dictionary to extract the "message" field
+                        let failureResponse = try JSONDecoder().decode([String: String].self, from: data)
+                        let errorMessage = failureResponse["message"] ?? "Unknown error"
+                        
+                        // Log the error for debugging purposes
+                        Logger.log("NetworkManager - Error: \(errorMessage)")
+                        
+                        // Return the error message to the UI
+                        completion(.failure(.requestFailed(description: errorMessage))) // Send just the message to the UI
+                    } catch {
+                        Logger.log("NetworkManager - Failure: Decoding error message failed: \(error.localizedDescription)")
+                        completion(.failure(.decodingFailed(description: "Failed to decode failure message")))
+                    }
+                } else {
+                    Logger.log("NetworkManager - Failure: No error message in the response")
+                    completion(.failure(.requestFailed(description: "Request failed with no error message")))
+                }
+                return
+            }
+
+            // Handle success (status code 200-299)
+            if let data = data {
+                do {
+                    // Attempt to decode the response as APIResponse<T> (i.e., User)
+                    let apiResponse = try JSONDecoder().decode(APIResponse<T>.self, from: data)
+                    
+                    // If the response contains data (e.g., User), return that data
+                    if let responseData = apiResponse.data {
+                        DispatchQueue.main.async {
+                            completion(.success(responseData)) // Return the responseData if cast is successful
+                        }
+                    } else if let message = apiResponse.message {
+                        // If no data but there is a message, handle it as a success message (as a string)
+                        Logger.log("NetworkManager - Success Message: \(message)") // Log success message
+                        
+                        // If the response type is expected to be a String, wrap the message in APIResponse<String> and return it
+                        DispatchQueue.main.async {
+                            let response = APIResponse<String>(data: message, httpStatusCode: statusCode, message: message)
+                            Logger.log("NetworkManager - Wrap the message in an APIResponse<String> and return it.")
+                            completion(.success(response as! T)) // Cast the response to T (assumed to be APIResponse<String>)
+                        }
+                    } else {
+                        // If there is neither data nor message, handle it as a failure
+                        Logger.log("NetworkManager - Error: No data or message in the response.")
+                        completion(.failure(.decodingFailed(description: "No data or message in the response.")))
+                    }
+                } catch {
+                    // If decoding as APIResponse<T> fails, check if it’s a plain message (String)
+                    if let dataString = String(data: data, encoding: .utf8) {
+                        Logger.log("NetworkManager - Response is a success message: \(dataString)")
+                        
+                        // If T is String, pass the string directly
+                        if let messageType = T.self as? String.Type {
+                            DispatchQueue.main.async {
+                                completion(.success(dataString as! T)) // Cast the message as T if T is String
+                            }
+                        } else {
+                            DispatchQueue.main.async {
+                                completion(.failure(.decodingFailed(description: "Unexpected response format.")))
+                            }
+                        }
+                    } else {
+                        Logger.log("NetworkManager - Failure: Decoding failed with error: \(error.localizedDescription)")
+                        completion(.failure(.decodingFailed(description: "Failed to decode the response")))
                     }
                 }
             } else {
-                do {
-                    let response = try JSONDecoder().decode(T.self, from: data)
-                    DispatchQueue.main.async {
-                        completion(.success(response))
-                    }
-                } catch {
-                    completion(.failure(.decodingFailed(description: "Failed to decode the response")))
-                }
+                Logger.log("NetworkManager - Failure: No data received from the server")
+                completion(.failure(.requestFailed(description: "No data received from the server")))
             }
         }.resume()
     }
+
+
+
+    
+    
+    
+    
+
+
+
+
+
 
     func refreshAccessToken(completion: @escaping (Result<String, APIError>) -> Void) {
         guard let refreshToken = getStoredRefreshToken() else {
