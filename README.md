@@ -13,3 +13,34 @@
 <p align="center">
   <img src="screenshots/profile-screen.png" width="220"/>
 </p>
+
+## ✨ Features
+
+- User Authentication
+- SwiftUI + MVVM Architecture
+- REST API Integration
+- Health & Fitness Tracking
+- Weekly Progress Reports
+- Dashboard Analytics
+- Reusable Components
+- Clean Architecture Principles
+
+## 🏗️ Architecture
+
+MVVM (Model-View-ViewModel)
+
+Views
+ ↓
+ViewModels
+ ↓
+Services
+ ↓
+API Layer
+
+## 🚀 Future Improvements
+
+- Apple HealthKit Integration
+- Push Notifications
+- Offline Data Caching
+- Workout Recommendation Engine
+- AI-powered Fitness Insights
