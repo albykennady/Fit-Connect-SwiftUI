@@ -1,9 +1,41 @@
+# User-specific files
+*.swp
+*.swo
+*.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
 # Xcode User Data
 xcuserdata/
 *.xcuserstate
 
-# Build Data
+# Xcode Build Data
 DerivedData/
+build/
 
-# macOS
-.DS_Store
+# Xcode Project Files
+*.xcworkspace/xcuserdata/
+
+# App Artifacts
+*.app
+*.app.dSYM
+*.ipa
+*.xcarchive
+
+# Swift Package Manager
+.build/
+.packages/
+Package.resolved
+Package.pins
+
+# Carthage
+Carthage/Build/
+
+# CocoaPods
+Pods/
+
+# Logs
+*.log
+*.lock

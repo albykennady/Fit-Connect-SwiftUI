@@ -1,14 +1,7 @@
-//
-//  DashboardScreenView.swift
-//  fitconnect
-//
-//  Created by Vijil Dhas A S on 18/02/25.
-//
 
-import SwiftUICore
 import SwiftUI
 
-struct HomeScreenView: View {
+struct DashboardScreenView: View {
     var body: some View {
         TabView {
             // Home Tab
@@ -33,11 +26,11 @@ struct HomeScreenView: View {
                 }
 
             // User Tab
-            UserTabView()
-                .tabItem {
-                    Image(systemName: "person.circle.fill") // Person icon for User
-                    Text("User")
-                }
+//            UserTabView()
+//                .tabItem {
+//                    Image(systemName: "person.circle.fill") // Person icon for User
+//                    Text("User")
+//                }
         }
         .accentColor(.blue) // Customize the tab item color
     }

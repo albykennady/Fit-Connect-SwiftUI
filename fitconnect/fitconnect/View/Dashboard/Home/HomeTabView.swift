@@ -1,30 +1,39 @@
 //
-//  HomeTabView.swift
-//  fitconnect
+//  HomePageView.swift
+//  FitConnect
 //
-//  Created by Vijil Dhas A S on 18/02/25.
+//  Created by Alby Kennady on 20/02/25.
 //
 
-import SwiftUICore
 import SwiftUI
 
 struct HomeTabView: View {
     var body: some View {
-        NavigationStack {
-            VStack {
-                Text("Home Screen")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                NavigationLink(destination: Text("Detail View")) {
-                    Text("Go to Detail View")
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+        ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        
+                        DashboardHeaderView()
+                        
+                        HealthScoreView(score: 80)
+                        
+                        HighlightsSection()
+                        
+                        Spacer()
+                        
+                        ThisWeekReport()
+                        
+                        
+                        
+                        
+                        
+                    }
+                    .padding()
                 }
+                .navigationBarHidden(true)
             }
-            .navigationTitle("Home")
-        }
-    }
+}
+
+
+#Preview {
+    HomeTabView()
 }
