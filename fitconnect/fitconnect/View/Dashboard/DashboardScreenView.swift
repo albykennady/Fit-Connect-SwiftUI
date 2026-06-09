@@ -1,11 +1,4 @@
-//
-//  DashboardScreenView.swift
-//  fitconnect
-//
-//  Created by Vijil Dhas A S on 18/02/25.
-//
 
-import SwiftUICore
 import SwiftUI
 
 struct DashboardScreenView: View {
